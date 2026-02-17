@@ -78,6 +78,69 @@ pairs."
 			 (stop-opacity . ,(cdr stop)))))
      stops))))
 
+(defun svg-multi-line-text (svg texts &rest args)
+  "Add TEXTS to SVG.
+The line will be advanced by 1em per text."
+  (let ((a (svg--arguments svg args)))
+    (svg--append
+     svg
+     (apply
+      'dom-node 'text `(,@a)
+      (cl-loop for text in texts
+	       collect (dom-node 'tspan `((dy . "1.0em")
+					  (x . ,(cdr (assoc 'x a))))
+				 (svg--encode-text text)))))))
+
+(defun svg--smooth-line-piece (a b)
+  (let ((length-x (- (car b) (car a)))
+	(length-y (- (cdr b) (cdr a))))
+    (list :length (sqrt (+ (expt length-x 2) (expt length-y 2)))
+	  :angle (atan length-y length-x))))
+
+(defun svg--smooth-line-bezier-control-point (current previous next reverse)
+  (let* ((previous (or previous current))
+	 (next (or next current))
+	 (line (svg--smooth-line-piece previous next))
+	 (angle (+ (cl-getf line :angle)
+		   (if reverse
+		       float-pi
+		     0)))
+	 (smoothing 0.2)
+	 (length (* (cl-getf line :length) smoothing)))
+    (cons (+ (car current) (* (cos angle) length))
+	  (+ (cdr current) (* (sin angle) length)))))
+
+(defun svg--smooth-line-bezier (i points)
+  (let ((cps (svg--smooth-line-bezier-control-point
+	      (elt points (- i 1))
+	      (elt points (- i 2))
+	      (elt points i)
+	      nil))
+	(cpe (svg--smooth-line-bezier-control-point
+	      (elt points i)
+	      (elt points (1- i))
+	      (elt points (1+ i))
+	      t)))
+    (format "C %s,%s %s,%s %s,%s"
+	    (car cps) (cdr cps)
+	    (car cpe) (cdr cpe)
+	    (car (elt points i)) (cdr (elt points i)))))
+
+(defun svg-smooth-line (svg points &rest args)
+  "Add POINTS to SVG as a smooth line."
+  (setq args
+	`(:d
+	  ,(string-join
+	    (cl-loop for point in points
+		     for i from 0
+		     collect (if (zerop i)
+				 (format "M %s,%s" (car point) (cdr point))
+			       (svg--smooth-line-bezier i points)))
+	    " ")
+	  ,@args))
+  (svg--append
+   svg (dom-node 'path `(,@(svg--arguments svg args)))))
+
 (provide 'svg-aux)
 
 ;;; svg-aux.el ends here
