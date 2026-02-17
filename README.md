@@ -15,7 +15,7 @@ Example usage:
              :height 500)
   (svg-rectangle svg 50 50 400 400
                  :fill (svg-opacity-gradient
-                        svg 'linear '((20 0.2 "red") (40 0.8 "white"))))
+                        svg '((20 0.2 "red") (40 0.8 "white"))))
   (svg-multi-line-text svg '("Many" "Lines" "of Text")
                        :x 100
                        :y 100

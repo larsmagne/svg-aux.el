@@ -56,15 +56,16 @@ parameter on the SVG element that should have an outline."
 		(dom-node 'feMergeNode `((in . "SourceGraphic"))))))
     (format "url(#%s)" id)))
 
-(defun svg-opacity-gradient (svg type stops &rest args)
+(defun svg-opacity-gradient (svg stops &rest args)
   "Add an opacity gradient to SVG.
-TYPE is `linear' or `radial'.  STOPS is a list of
-percentage/opacity/color lists.  The ID of the gradient is
-returned.
+STOPS is a list of percentage/opacity/color lists.  The ID of the
+gradient is returned.
 
 ARGS can contain keywords to control the direction of the
 gradient.  `:x1 1 :y2 1' means \"from top left\".  The keywords
-are `:x1', `:x2', `:y1' and `:y2', and go from 0 to 1."
+are `:x1', `:x2', `:y1' and `:y2', and go from 0 to 1.
+
+It can also contain `:type', which should be either `linear' or `radial'."
   (let ((id (format "gradient%d" (cl-incf svg--id-counter))))
     (unless args
       (setq args '(:y2 1)))
@@ -72,9 +73,9 @@ are `:x1', `:x2', `:y1' and `:y2', and go from 0 to 1."
      svg
      (apply
       'dom-node
-      (if (eq type 'linear)
-	  'linearGradient
-	'radialGradient)
+      (if (eq (plist-get args :type) 'radial)
+	  'radialGradient
+	'linearGradient)
       `((id . ,id)
 	(x1 . ,(or (plist-get args :x1) 0))
 	(x2 . ,(or (plist-get args :x2) 0))
