@@ -23,6 +23,7 @@
 
 ;;; Commentary:
 
+;;; Code:
 
 (defvar svg--id-counter 1)
 
@@ -55,7 +56,27 @@ parameter on the SVG element that should have an outline."
 		(dom-node 'feMergeNode `((in . "SourceGraphic"))))))
     (format "url(#%s)" id)))
 
-;;; Code:
+(defun svg-opacity-gradient (svg id type stops)
+  "Add an opacity gradient with ID to SVG.
+TYPE is `linear' or `radial'.  STOPS is a list of percentage/opacity
+pairs."
+  (svg--def
+   svg
+   (apply
+    'dom-node
+    (if (eq type 'linear)
+	'linearGradient
+      'radialGradient)
+    `((id . ,id)
+      (x1 . 0)
+      (x2 . 0)
+      (y1 . 0)
+      (y2 . 1))
+    (mapcar
+     (lambda (stop)
+       (dom-node 'stop `((offset . ,(format "%s%%" (car stop)))
+			 (stop-opacity . ,(cdr stop)))))
+     stops))))
 
 (provide 'svg-aux)
 
