@@ -56,27 +56,31 @@ parameter on the SVG element that should have an outline."
 		(dom-node 'feMergeNode `((in . "SourceGraphic"))))))
     (format "url(#%s)" id)))
 
-(defun svg-opacity-gradient (svg id type stops)
-  "Add an opacity gradient with ID to SVG.
-TYPE is `linear' or `radial'.  STOPS is a list of percentage/opacity
-pairs."
-  (svg--def
-   svg
-   (apply
-    'dom-node
-    (if (eq type 'linear)
-	'linearGradient
-      'radialGradient)
-    `((id . ,id)
-      (x1 . 0)
-      (x2 . 0)
-      (y1 . 0)
-      (y2 . 1))
-    (mapcar
-     (lambda (stop)
-       (dom-node 'stop `((offset . ,(format "%s%%" (car stop)))
-			 (stop-opacity . ,(cdr stop)))))
-     stops))))
+(defun svg-opacity-gradient (svg type stops)
+  "Add an opacity gradient to SVG.
+TYPE is `linear' or `radial'.  STOPS is a list of
+percentage/opacity/color lists.  The ID of the gradient is
+returned."
+  (let ((id (format "gradient%d" (cl-incf svg--id-counter))))
+    (svg--def
+     svg
+     (apply
+      'dom-node
+      (if (eq type 'linear)
+	  'linearGradient
+	'radialGradient)
+      `((id . ,id)
+	(x1 . 0)
+	(x2 . 0)
+	(y1 . 0)
+	(y2 . 1))
+      (mapcar
+       (lambda (stop)
+	 (dom-node 'stop `((offset . ,(format "%s%%" (car stop)))
+			   (stop-color . ,(caddr stop))
+			   (stop-opacity . ,(cadr stop)))))
+       stops)))
+    (format "url(#%s)" id)))
 
 (defun svg-multi-line-text (svg texts &rest args)
   "Add TEXTS to SVG.
