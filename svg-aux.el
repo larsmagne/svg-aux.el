@@ -89,7 +89,13 @@ The line will be advanced by 1em per text."
       (cl-loop for text in texts
 	       collect (dom-node 'tspan `((dy . "1.0em")
 					  (x . ,(cdr (assoc 'x a))))
-				 (svg--encode-text text)))))))
+				 (svg--encode-text
+				  ;; To ensure that spaces survive the
+				  ;; SVG machinery (especially around
+				  ;; entities like &amp;), make them
+				  ;; into non-breaking spaces.
+				  (replace-regexp-in-string
+				   (string 32) (string 160) text))))))))
 
 (defun svg--smooth-line-piece (a b)
   (let ((length-x (- (car b) (car a)))
