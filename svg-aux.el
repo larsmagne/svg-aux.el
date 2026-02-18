@@ -89,17 +89,26 @@ It can also contain `:type', which should be either `linear' or `radial'."
        stops)))
     (format "url(#%s)" id)))
 
+(defun svg--filter-args (args &rest ids)
+  (cl-loop for (k v) on args by #'cddr
+	   unless (member k ids)
+	   append (list k v)))
+
 (defun svg-multi-line-text (svg texts &rest args)
   "Add TEXTS to SVG.
-The line will be advanced by 1em per text."
-  (let ((a (svg--arguments svg args)))
+The `:advance' keyword (defaulting to \"1.0em\") can be used to
+control line height.
+
+The line will be advanced by that height per text."
+  (let ((a (svg--arguments svg (svg--filter-args args :advance))))
     (svg--append
      svg
      (apply
       'dom-node 'text `(,@a)
       (cl-loop for text in texts
-	       collect (dom-node 'tspan `((dy . "1.0em")
-					  (x . ,(cdr (assoc 'x a))))
+	       collect (dom-node 'tspan
+				 `((dy . (or (plist-get args :advance) "1.0em"))
+				   (x . ,(cdr (assoc 'x a))))
 				 (svg--encode-text text)))))))
 
 (defun svg--smooth-line-piece (a b)
